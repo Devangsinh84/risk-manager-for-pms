@@ -1,0 +1,231 @@
+/* --- Global Reset & Theme --- */
+ * {
+     box-sizing: border-box;
+     margin: 0;
+     padding: 0;
+     font-family: 'Inter', system-ui, sans-serif;
+}
+ body {
+     background-color: #0f172a;
+     color: #f8fafc;
+     display: flex;
+     justify-content: center;
+     padding: 2rem;
+}
+/* --- Layout --- */
+ .container {
+     max-width: 1200px;
+     width: 100%;
+     display: flex;
+     flex-direction: column;
+     gap: 2rem;
+}
+ .header {
+     text-align: center;
+     margin-bottom: 1rem;
+}
+ .header h1 {
+     font-size: 2.5rem;
+     color: #38bdf8;
+     letter-spacing: -0.5px;
+}
+ .header p {
+     color: #94a3b8;
+     font-size: 1.1rem;
+     margin-top: 0.5rem;
+}
+/* --- Upload Section --- */
+ .upload-card {
+     background-color: #1e293b;
+     border: 2px dashed #334155;
+     border-radius: 16px;
+     padding: 3rem 2rem;
+     text-align: center;
+     transition: all 0.3s ease;
+}
+ .upload-card:hover {
+     border-color: #38bdf8;
+     background-color: #1e293bcf;
+}
+ .file-input {
+     margin-bottom: 1.5rem;
+     color: #cbd5e1;
+}
+ .btn-primary {
+     background: linear-gradient(135deg, #0284c7, #2563eb);
+     color: white;
+     border: none;
+     padding: 12px 28px;
+     font-size: 1.1rem;
+     font-weight: 600;
+     border-radius: 8px;
+     cursor: pointer;
+     transition: transform 0.2s, box-shadow 0.2s;
+}
+ .btn-primary:hover:not(:disabled) {
+     transform: translateY(-2px);
+     box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+}
+ .btn-primary:disabled {
+     opacity: 0.5;
+     cursor: not-allowed;
+}
+/* --- Dashboard Grid --- */
+ .dashboard-title {
+     font-size: 1.8rem;
+     border-bottom: 2px solid #334155;
+     padding-bottom: 0.5rem;
+     margin-bottom: 1.5rem;
+}
+ .cards-grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+     gap: 1.5rem;
+}
+/* --- Risk Cards --- */
+ .risk-card {
+     background-color: #1e293b;
+     border-radius: 12px;
+     padding: 1.5rem;
+     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+     border: 1px solid #334155;
+     display: flex;
+     flex-direction: column;
+     gap: 1rem;
+     transition: transform 0.2s;
+}
+ .risk-card:hover {
+     transform: translateY(-4px);
+}
+ .card-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     border-bottom: 1px solid #334155;
+     padding-bottom: 0.8rem;
+}
+ .card-header h3 {
+     font-size: 1.2rem;
+     color: #f1f5f9;
+}
+/* --- Custom Progress Bar --- */
+ .severity-bar-bg {
+     width: 100%;
+     background-color: #334155;
+     border-radius: 99px;
+     height: 10px;
+     overflow: hidden;
+     margin-top: 0.5rem;
+}
+ .severity-bar-fill {
+     height: 100%;
+     border-radius: 99px;
+     transition: width 0.5s ease-in-out;
+}
+ .sev-low {
+     background-color: #22c55e;
+}
+/* Green */
+ .sev-med {
+     background-color: #eab308;
+}
+/* Yellow */
+ .sev-high {
+     background-color: #ef4444;
+}
+/* Red */
+/* --- Typography --- */
+ .label {
+     font-size: 0.85rem;
+     text-transform: uppercase;
+     letter-spacing: 0.5px;
+     color: #94a3b8;
+     font-weight: 700;
+     margin-bottom: 0.2rem;
+}
+ .value {
+     color: #cbd5e1;
+     font-size: 0.95rem;
+     line-height: 1.5;
+}
+/* --- Chat Section --- */
+ .chat-section {
+     margin-top: 3rem;
+     background-color: #1e293b;
+     border-radius: 12px;
+     border: 1px solid #334155;
+     overflow: hidden;
+     display: flex;
+     flex-direction: column;
+}
+ .chat-header {
+     background-color: #0f172a;
+     padding: 1rem 1.5rem;
+     border-bottom: 1px solid #334155;
+     font-weight: bold;
+     color: #38bdf8;
+}
+ .chat-history {
+     padding: 1.5rem;
+     display: flex;
+     flex-direction: column;
+     gap: 1rem;
+     max-height: 400px;
+     overflow-y: auto;
+}
+ .chat-msg {
+     max-width: 80%;
+     padding: 0.8rem 1.2rem;
+     border-radius: 12px;
+     font-size: 0.95rem;
+     line-height: 1.4;
+}
+ .msg-user {
+     align-self: flex-end;
+     background-color: #0284c7;
+     color: white;
+     border-bottom-right-radius: 2px;
+}
+ .msg-ai {
+     align-self: flex-start;
+     background-color: #334155;
+     color: #f1f5f9;
+     border-bottom-left-radius: 2px;
+}
+ .chat-form {
+     display: flex;
+     padding: 1rem;
+     background-color: #0f172a;
+     border-top: 1px solid #334155;
+     gap: 0.5rem;
+}
+ .chat-input {
+     flex-grow: 1;
+     padding: 0.8rem 1rem;
+     border-radius: 8px;
+     border: 1px solid #334155;
+     background-color: #1e293b;
+     color: white;
+     outline: none;
+}
+ .chat-input:focus {
+     border-color: #38bdf8;
+}
+ .btn-send {
+     background-color: #38bdf8;
+     color: #0f172a;
+     border: none;
+     padding: 0.8rem 1.5rem;
+     border-radius: 8px;
+     font-weight: bold;
+     cursor: pointer;
+     transition: 0.2s;
+}
+ .btn-send:hover:not(:disabled) {
+     background-color: #0284c7;
+     color: white;
+}
+ .btn-send:disabled {
+     opacity: 0.5;
+     cursor: not-allowed;
+}

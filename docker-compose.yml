@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: node:latest
+    working_dir: /app
+    # Mount the frontend folder into the container
+    volumes:
+      - ./frontend:/app
+    # Map Vite's default port to your Windows machine
+    ports:
+      - "5173:5173"
+    # Install packages and start the React dev server exposing it to the host
+    command: sh -c "npm install && npm install axios && npm run dev -- --host"
