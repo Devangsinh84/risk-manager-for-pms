@@ -94,7 +94,7 @@ The system uses **no fine-tuning** and **no vector database**. Context is passed
 ### 1. Clone and configure
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Devangsinh84/risk-manager-for-pms.git
 cp .env.example .env
 # Edit .env and add your HF_TOKEN
 ```
@@ -126,17 +126,11 @@ Open `http://localhost:5173`, click **Select PDF Project Report**, choose any pr
 
 ---
 
-## Demo Link
-
-> 🔗 **Live Demo:** `[PLACEHOLDER — add deployment URL here]`
-
----
-
 ## Team
 
 | Name | Role |
 |---|---|
-| [Your Name] | Full-Stack Developer, AI Integration, Product Design |
+| Devangsinh Gohil | Full-Stack Developer, AI Integration, Product Design |
 
 *Solo Master's project submission.*
 
@@ -165,9 +159,3 @@ edge-risk/
 ├── RAI.md
 └── CHANGELOG.md
 ```
-
----
-
-## License
-
-MIT — see `LICENSE` for details.
