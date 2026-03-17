@@ -1,115 +1,173 @@
-# 🛡️ Edge-AI Risk Analyzer
+# 🛡️ Edge Risk — Enterprise Project Intelligence
 
-An enterprise-grade project risk intelligence tool that automatically extracts, scores, and visualizes risks from PDF project status reports — powered by the Qwen 2.5 language model via the Hugging Face Router API.
+> **Master's PoC Submission · GenAI Track**
+> Powered by Qwen 2.5-7B-Instruct via Hugging Face Inference API
 
-## Overview
+---
 
-Upload a PDF project report and the app will:
-- Extract and analyze the document text
-- Identify 3–5 distinct risks with probability and impact scores
-- Generate an executive summary and an overall risk score (1–100)
-- Plot risks on an interactive Probability vs. Impact matrix
-- Let you chat with the document via a built-in RAG interface
+## The Problem
+
+Project Management Offices (PMOs) in mid-to-large enterprises receive dozens of project status reports every week. Risk identification is still largely manual — a senior analyst reads a 20-page PDF, highlights concerns, and writes a risk register by hand. This process is:
+
+- **Slow** — takes 2–4 hours per report
+- **Inconsistent** — depends on the analyst's experience and attention
+- **Unscalable** — bottlenecks at the PMO level as project portfolios grow
+- **Reactive** — risks are often surfaced after they have already materialized
+
+---
+
+## The Solution
+
+**Edge Risk** is an AI-powered project intelligence platform that turns any PDF status report into a structured, quantified risk dashboard in under 60 seconds.
+
+Upload a report → the system extracts text, sends it to a fine-tuned LLM, and returns:
+
+- An **Executive Summary** of overall project health
+- An **Overall Risk Score** (1–100) for portfolio-level triage
+- **3–5 Identified Risks** with Probability, Impact, Category, and Recommended Mitigation
+- An interactive **Threat Matrix** (Impact vs. Probability scatter plot)
+- A **Persistent RAG Chat** — ask follow-up questions grounded in the document
+
+All analysis is stored in a local SQLite database so past projects load instantly from the archive sidebar.
+
+---
+
+## Target Users
+
+| Persona | Use Case |
+|---|---|
+| PMO Analyst | Rapid first-pass risk triage on incoming status reports |
+| Project Manager | Self-service risk scoring before steering committee meetings |
+| Portfolio Director | Consistent risk scoring across all projects for comparison |
+| Auditor / Compliance | Evidence trail of identified risks and recommended mitigations |
+
+---
+
+## Key Features
+
+- PDF upload and AI-powered structured risk extraction
+- Threat Matrix visualization (Recharts scatter plot)
+- Risk drill-down cards with category badges and mitigation guidance
+- Persistent project archive (SQLite + SQLAlchemy)
+- RAG Chat grounded in document context + structured analysis JSON
+- Dark / Light theme toggle
+- One-click PDF export of the full dashboard (html2canvas + jsPDF)
+
+---
+
+## AI Components Disclosure
+
+| Component | Model | Provider | Purpose |
+|---|---|---|---|
+| Risk Extraction | `Qwen/Qwen2.5-7B-Instruct` | Hugging Face Router API | Structured JSON risk analysis from PDF text |
+| RAG Chat | `Qwen/Qwen2.5-7B-Instruct` | Hugging Face Router API | Grounded Q&A against document + analysis context |
+
+The system uses **no fine-tuning** and **no vector database**. Context is passed directly in the prompt (retrieval-augmented generation via prompt stuffing). See `RAI.md` for full responsible AI disclosure.
+
+---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 19 + Vite 8 |
-| Charts | Recharts |
-| HTTP Client | Axios |
-| Backend API | FastAPI (Python) |
-| AI Engine | Hugging Face Router API — Qwen/Qwen2.5-7B-Instruct |
-| PDF Parsing | PyPDF2 |
-| Containerization | Docker Compose (frontend only) |
+| Layer | Technology | Version |
+|---|---|---|
+| Frontend | React + Vite | 19.x / 8.x |
+| Charts | Recharts | 3.x |
+| PDF Export | jsPDF + html2canvas | 4.x / 1.x |
+| HTTP Client | Axios | 1.x |
+| Backend API | FastAPI + Uvicorn | latest |
+| ORM | SQLAlchemy | latest |
+| Database | SQLite | (bundled) |
+| PDF Parsing | PyPDF2 | 3.0.1 |
+| AI Inference | Hugging Face Router API | — |
+| Container | Docker Compose | 3.8 |
 
-## Architecture
+---
 
-```
-┌─────────────────────────────────────────────────────┐
-│                  React Frontend (Vite)               │
-│  - PDF upload → /api/analyze                        │
-│  - Risk dashboard (score, matrix, drill-down cards) │
-│  - RAG chat interface → /api/chat                   │
-└───────────────────┬─────────────────────────────────┘
-                    │ HTTP (localhost:8000)
-┌───────────────────▼─────────────────────────────────┐
-│              FastAPI Backend (main.py)               │
-│  POST /api/analyze  — PDF upload & risk extraction  │
-│  POST /api/chat     — Q&A against document text     │
-└───────────────────┬─────────────────────────────────┘
-                    │
-┌───────────────────▼─────────────────────────────────┐
-│           RiskAnalyzerEngine (risk_engine.py)        │
-│  - PyPDF2 text extraction                           │
-│  - Structured JSON risk analysis prompt             │
-│  - Free-form document Q&A                           │
-└───────────────────┬─────────────────────────────────┘
-                    │ HTTPS
-┌───────────────────▼─────────────────────────────────┐
-│     Hugging Face Router API (Qwen2.5-7B-Instruct)   │
-└─────────────────────────────────────────────────────┘
-```
+## Quick Start
 
-## Prerequisites
+### Prerequisites
 
 - Python 3.9+
-- Node.js (for running frontend outside Docker)
-- Docker + Docker Compose (for containerized frontend)
-- A Hugging Face fine-grained API token with inference access
+- Node.js 18+ (or Docker)
+- A Hugging Face account with a fine-grained API token (free tier works)
 
-## Configuration
-
-Open `risk_engine.py` and replace the token value:
-
-```python
-HF_TOKEN = "your_huggingface_token_here"
-```
-
-## How to Run Locally
-
-Install Python dependencies:
+### 1. Clone and configure
 
 ```bash
-pip install fastapi uvicorn PyPDF2 requests pydantic
+git clone <your-repo-url>
+cp .env.example .env
+# Edit .env and add your HF_TOKEN
 ```
 
-Then start both services with these two commands:
+### 2. Start the backend
 
-**1. Start the React frontend (Docker):**
 ```bash
-docker compose up
-```
-
-**2. Start the FastAPI backend:**
-```bash
+pip install -r requirements.txt
 uvicorn main:app --reload
+# API available at http://localhost:8000
 ```
 
-The frontend will be available at `http://localhost:5173` and the API at `http://localhost:8000`.
+### 3. Start the frontend
 
-## API Endpoints
+```bash
+# Option A — Node directly
+cd frontend
+npm install
+npm run dev
 
-`POST /api/analyze` — accepts a PDF file upload, returns the structured risk analysis JSON and the extracted document text.
-
-`POST /api/chat` — accepts `document_text` and `question` fields, returns a concise answer grounded in the document.
-
-## Risk Analysis Output Schema
-
-```json
-{
-  "ExecutiveSummary": "...",
-  "OverallRiskScore": 72,
-  "IdentifiedRisks": [
-    {
-      "RiskName": "...",
-      "Category": "...",
-      "Probability": 8,
-      "Impact": 7,
-      "Description": "...",
-      "AffectedDepartments": ["Engineering", "PMO"],
-      "RecommendedAction": "..."
-    }
-  ]
-}
+# Option B — Docker
+docker compose up
+# UI available at http://localhost:5173
 ```
+
+### 4. Upload a PDF
+
+Open `http://localhost:5173`, click **Select PDF Project Report**, choose any project status report, and click **Start AI Analysis**.
+
+---
+
+## Demo Link
+
+> 🔗 **Live Demo:** `[PLACEHOLDER — add deployment URL here]`
+
+---
+
+## Team
+
+| Name | Role |
+|---|---|
+| [Your Name] | Full-Stack Developer, AI Integration, Product Design |
+
+*Solo Master's project submission.*
+
+---
+
+## Project Structure
+
+```
+edge-risk/
+├── main.py              # FastAPI routes
+├── risk_engine.py       # AI engine (extraction + RAG chat)
+├── models.py            # SQLAlchemy ORM models
+├── database.py          # DB engine + session factory
+├── requirements.txt     # Python dependencies
+├── docker-compose.yml   # Frontend container
+├── .env.example         # Environment variable template
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx      # Main React component
+│   │   ├── App.css      # Theme-aware styles
+│   │   └── index.css    # Global reset
+│   ├── package.json
+│   └── vite.config.js
+├── ARCHITECTURE.md
+├── SECURITY.md
+├── RAI.md
+└── CHANGELOG.md
+```
+
+---
+
+## License
+
+MIT — see `LICENSE` for details.

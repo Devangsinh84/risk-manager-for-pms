@@ -4,22 +4,26 @@ from typing import Optional
 import json
 import re
 import requests
+import os
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# ---> PASTE YOUR FINE-GRAINED HF TOKEN HERE <---
-HF_TOKEN = "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" 
-
 class RiskAnalyzerEngine:
     def __init__(self):
+        load_dotenv()
+        HF_TOKEN = os.getenv("HF_TOKEN")
+
+        print(f"DEBUG: Token loaded: {HF_TOKEN[:8] if HF_TOKEN else 'NOT FOUND'}...")
+
         logger.info("Initializing Hugging Face Router API...")
         
         # Updated to the brand new router URL the error message asked for!
         self.api_url = "https://router.huggingface.co/v1/chat/completions"
         
         self.headers = {
-            "Authorization": f"Bearer {HF_TOKEN}", # Keep your fine-grained token here!
+            "Authorization": f"Bearer {HF_TOKEN}",
             "Content-Type": "application/json"
         }
         self.model_id = "Qwen/Qwen2.5-7B-Instruct"
@@ -102,14 +106,30 @@ Document Text:
                 }
             }
             
-    def ask_question(self, document_text: str, question: str) -> str:
+    def ask_question(self, document_text: str, question: str, analysis_json: str = "") -> str:
+        # Build a rich context: raw document + structured AI analysis
+        context_parts = []
+        if document_text:
+            context_parts.append(f"--- ORIGINAL DOCUMENT ---\n{document_text[:1500]}")
+        if analysis_json:
+            context_parts.append(f"--- AI RISK ANALYSIS (includes Threat Matrix, Risk Scores, Mitigations) ---\n{analysis_json[:2000]}")
+        
+        context = "\n\n".join(context_parts) if context_parts else "No document context available."
+
         payload = {
             "model": self.model_id,
             "messages": [
-                {"role": "system", "content": "Answer the user's question concisely using only the provided document text. If the answer is not in the text, say 'I cannot find this in the document.'"},
-                {"role": "user", "content": f"Document Text:\n{document_text[:1500]}\n\nQuestion: {question}"}
+                {"role": "system", "content": (
+                    "You are an expert risk analyst assistant. Answer the user's question using the provided context, "
+                    "which includes both the original document text and the structured AI risk analysis (threat matrix, "
+                    "risk scores, identified risks, and mitigations). "
+                    "Format your response clearly using markdown: use **bold** for key terms, bullet points (- item) for lists, "
+                    "and keep answers concise and structured. "
+                    "If the answer is not in the context, say 'I cannot find this in the document.'"
+                )},
+                {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}
             ],
-            "max_tokens": 200,
+            "max_tokens": 400,
             "temperature": 0.3
         }
         
