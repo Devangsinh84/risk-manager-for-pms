@@ -239,131 +239,121 @@ Edge Risk is accountable to three core performance indicators that directly map 
 
 ### A1. System Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  LAYER 1 — USER INTERFACE (Browser)                                 │
-│  React 19 + Vite 8  ·  http://localhost:5173                        │
-│                                                                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
-│  │  Welcome /   │  │  Analytics   │  │      Chat RAG            │  │
-│  │  Upload      │  │  Dashboard   │  │  (Persistent History)    │  │
-│  └──────────────┘  └──────────────┘  └──────────────────────────┘  │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │ Axios HTTP (JSON / multipart)
-┌────────────────────────────▼────────────────────────────────────────┐
-│  LAYER 5 — API GATEWAY (FastAPI)                                    │
-│  main.py  ·  http://localhost:8000                                  │
-│                                                                     │
-│  POST /api/projects          — Upload PDF, run analysis, save       │
-│  GET  /api/projects          — List all archived projects           │
-│  GET  /api/projects/{id}     — Load saved dashboard                 │
-│  DELETE /api/projects/{id}   — Remove project                       │
-│  GET  /api/projects/{id}/chat — Load chat history                   │
-│  POST /api/projects/{id}/chat — Send message, get AI reply          │
-└────────────────────────────┬────────────────────────────────────────┘
-                             │ Python function call
-┌────────────────────────────▼────────────────────────────────────────┐
-│  BUSINESS LOGIC — Risk Engine                                       │
-│  risk_engine.py  ·  RiskAnalyzerEngine class                        │
-│                                                                     │
-│  extract_text(pdf_file)      — PyPDF2 → raw string (cap 1500 chars) │
-│  analyze(document_text)      — Structured JSON risk extraction      │
-│  ask_question(text, q, json) — Grounded RAG Q&A                     │
-└──────────────┬─────────────────────────────┬───────────────────────┘
-               │ HTTPS POST                  │ ORM call
-┌──────────────▼──────────────┐  ┌───────────▼───────────────────────┐
-│  LAYER 2 — AI INFERENCE     │  │  DATA ACCESS — SQLAlchemy ORM      │
-│  Hugging Face Router API    │  │  models.py / database.py           │
-│  Qwen/Qwen2.5-7B-Instruct   │  │                                    │
-│  router.huggingface.co/v1/  │  │  Project · Document · ChatMessage  │
-│  chat/completions           │  │                                    │
-└──────────────┬──────────────┘  └───────────┬───────────────────────┘
-               │ JSON response               │ SQL
-               │                 ┌───────────▼───────────────────────┐
-               │                 │  LAYER 3 — PERSISTENCE            │
-               │                 │  SQLite  ·  enterprise_risk.db     │
-               │                 │  Tables: projects, documents,      │
-               │                 │          chat_messages             │
-               │                 └────────────────────────────────────┘
-               │
-┌──────────────▼──────────────────────────────────────────────────────┐
-│  LAYER 1 — INFRASTRUCTURE / CONTAINER                               │
-│  docker-compose.yml                                                 │
-│  Service: frontend (node:latest) · Port: 5173:5173                  │
-│  Backend: uvicorn (native) · Port: 8000                             │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+   graph TB
+       subgraph Client_Layer ["Layer 1 & 10: UX & Interface (React 19 + Vite)"]
+           UI[Dashboard / Upload / Chat UI]
+           Export[PDF Export - jsPDF]
+           Charts[Threat Matrix - Recharts]
+       end
+   
+       subgraph API_Layer ["Layer 5: Orchestration (FastAPI)"]
+           Endpoints[REST Endpoints /api/projects]
+           Logic[Business Logic - risk_engine.py]
+       end
+   
+       subgraph Data_Layer ["Layer 3 & 4: Persistence & RAG (SQLite + SQLAlchemy)"]
+           DB[(SQLite: enterprise_risk.db)]
+           ORM[SQLAlchemy Models]
+       end
+   
+       subgraph AI_Inference ["Layer 2: Foundation Model"]
+           HF[Hugging Face Router API]
+           Model[Qwen 2.5-7B-Instruct]
+       end
+   
+       %% Interactions
+       UI <-->|Axios / JSON| Endpoints
+       Endpoints <--> ORM
+       ORM <--> DB
+       Endpoints --> Logic
+       Logic <-->|HTTPS / Prompt Stuffing| HF
+       HF <--> Model
+   
+       %% Modern Styling
+       style UI fill:#003366,stroke:#fff,stroke-width:2px,color:#fff
+       style Endpoints fill:#004d40,stroke:#fff,stroke-width:2px,color:#fff
+       style DB fill:#5d4037,stroke:#fff,stroke-width:2px,color:#fff
+       style Model fill:#4a148c,stroke:#fff,stroke-width:2px,color:#fff
+       style Logic fill:#2e7d32,stroke:#fff,stroke-width:2px,color:#fff
+       
+       %% Subgraph Styling
+       style Client_Layer fill:#f0f4f8,stroke:#003366,stroke-dasharray: 5 5
+       style API_Layer fill:#f1f8e9,stroke:#2e7d32,stroke-dasharray: 5 5
+       style Data_Layer fill:#efebe9,stroke:#5d4037,stroke-dasharray: 5 5
+       style AI_Inference fill:#f3e5f5,stroke:#4a148c,stroke-dasharray: 5 5
 ```
 
 ---
 
 ### A2. Data Flow — PDF Upload to Dashboard
 
-```
-User selects PDF
-      │
-      ▼
-React: FormData POST → /api/projects
-      │
-      ▼
-FastAPI: receives UploadFile
-      │
-      ▼
-RiskAnalyzerEngine.extract_text()
-  └─ PyPDF2 reads all pages
-  └─ Concatenates text, caps at 1,500 chars
-      │
-      ▼
-RiskAnalyzerEngine.analyze(document_text)
-  └─ Builds structured prompt with strict JSON schema
-  └─ POST → HF Router API (Qwen2.5-7B-Instruct)
-  └─ Receives raw LLM response
-  └─ Regex extracts JSON block { ... }
-  └─ json.loads() → Python dict
-      │
-      ▼
-FastAPI: persists to SQLite
-  └─ INSERT INTO projects (name)
-  └─ INSERT INTO documents (extracted_text, risk_analysis_json)
-      │
-      ▼
-FastAPI: returns { project_id, name, data }
-      │
-      ▼
-React: setResults(data), setActiveProjectId(id)
-  └─ Second GET /api/projects/{id} → sets documentText state
-  └─ Renders dashboard (summary, scatter chart, risk cards)
+```mermaid
+   sequenceDiagram
+       autonumber
+       participant U as User (React Frontend)
+       participant A as FastAPI (Backend)
+       participant E as Risk Engine (PyPDF2)
+       participant HF as Hugging Face (Qwen 2.5)
+       participant DB as SQLite (Database)
+   
+       Note over U,DB: PDF Analysis Workflow
+   
+       U->>A: Upload PDF Report
+       A->>E: extract_text()
+       E-->>A: Raw Text (Capped 1500 chars)
+       A->>HF: analyze(text) + JSON Schema Prompt
+       HF-->>A: Structured JSON Response
+       A->>A: Regex Extraction & Validation
+       A->>DB: Save Project & Analysis
+       DB-->>A: Confirmation
+       A-->>U: JSON Data (Risks, Summary, Score)
+       
+       rect rgb(240, 244, 248)
+           Note right of U: Dashboard Renders Matrix & Cards
+       end
 ```
 
 ---
 
 ### A3. Data Flow — RAG Chat
 
-```
-User types question → clicks Send
-      │
-      ▼
-React: POST /api/projects/{id}/chat
-  Body: { question, document_text, analysis_json }
-      │
-      ▼
-FastAPI: saves user ChatMessage to DB
-      │
-      ▼
-RiskAnalyzerEngine.ask_question(doc_text, question, analysis_json)
-  └─ Builds two-layer context string:
-       "--- ORIGINAL DOCUMENT ---\n{doc_text[:1500]}"
-       "--- AI RISK ANALYSIS ---\n{analysis_json[:2000]}"
-  └─ System prompt: answer only from context, use markdown formatting
-  └─ POST → HF Router API
-  └─ Returns answer string
-      │
-      ▼
-FastAPI: saves AI ChatMessage to DB
-      │
-      ▼
-React: appends AI bubble to chatHistory
-  └─ formatMessage() renders markdown (bold, bullets, numbered lists)
-  └─ Auto-scrolls to bottom
+```mermaid
+   graph LR
+       subgraph Input_Layer ["User Input"]
+           Q[User Question]
+       end
+   
+       subgraph Context_Assembly ["Context Assembly (Prompt Stuffing)"]
+           Doc[Original Doc Context]
+           Anal[Prior JSON Analysis]
+           Prompt[System Instructions]
+       end
+   
+       subgraph AI_Core ["AI Inference"]
+           Qwen[Qwen 2.5-7B]
+       end
+   
+       subgraph Persistence ["Storage"]
+           ChatDB[(Chat History)]
+       end
+   
+       Q --> Context_Assembly
+       Doc --- Context_Assembly
+       Anal --- Context_Assembly
+       Prompt --- Context_Assembly
+       
+       Context_Assembly -->|Combined Prompt| Qwen
+       Qwen -->|Markdown Answer| ChatDB
+       ChatDB --> UI[Chat Interface]
+   
+       %% Modern Styling for Consistency
+       style Q fill:#003366,stroke:#fff,stroke-width:2px,color:#fff
+       style Context_Assembly fill:#f1f8e9,stroke:#2e7d32,stroke-dasharray: 5 5
+       style Qwen fill:#4a148c,stroke:#fff,stroke-width:2px,color:#fff
+       style ChatDB fill:#5d4037,stroke:#fff,stroke-width:2px,color:#fff
+       style Doc fill:#2e7d32,stroke:#fff,color:#fff
+       style Anal fill:#2e7d32,stroke:#fff,color:#fff
 ```
 
 ---
