@@ -1,6 +1,6 @@
 # 🛡️ Edge Risk — Enterprise Project Intelligence
 
-> **Master's PoC Submission · GenAI Track**
+> **Master's proof of concept · GenAI track**
 > Powered by Qwen 2.5-7B-Instruct via Hugging Face Inference API
 
 ---
@@ -20,7 +20,7 @@ Project Management Offices (PMOs) in mid-to-large enterprises receive dozens of 
 
 **Edge Risk** is an AI-powered project intelligence platform that turns any PDF status report into a structured, quantified risk dashboard in under 60 seconds.
 
-Upload a report → the system extracts text, sends it to a fine-tuned LLM, and returns:
+Upload a report → the system extracts text, sends it to an instruction-tuned LLM (Qwen 2.5-7B-Instruct, no custom fine-tuning), and returns:
 
 - An **Executive Summary** of overall project health
 - An **Overall Risk Score** (1–100) for portfolio-level triage

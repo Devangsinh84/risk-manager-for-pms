@@ -15,7 +15,8 @@ class RiskAnalyzerEngine:
         load_dotenv()
         HF_TOKEN = os.getenv("HF_TOKEN")
 
-        print(f"DEBUG: Token loaded: {HF_TOKEN[:8] if HF_TOKEN else 'NOT FOUND'}...")
+        if not HF_TOKEN:
+            logger.warning("HF_TOKEN is not set; add it to your .env file (see .env.example).")
 
         logger.info("Initializing Hugging Face Router API...")
         
